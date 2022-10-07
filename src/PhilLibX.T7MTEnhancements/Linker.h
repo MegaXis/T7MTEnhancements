@@ -32,6 +32,7 @@ namespace Linker
 
     // AI compiler functions
     bool(__cdecl* IsDeltaAnim)(uint32_t scriptStrIndex);
+    bool(__cdecl* IsTranslationTagAnim)(uint32_t scriptStrIndex); // TODO:? My Addition
     bool(__cdecl* IsAdditiveAnim)(uint32_t scriptStrIndex);
     bool(__cdecl* IsLoopSyncAnim)(uint32_t scriptStrIndex);
     bool(__cdecl* IsLoopingAnim)(uint32_t scriptStrIndex);

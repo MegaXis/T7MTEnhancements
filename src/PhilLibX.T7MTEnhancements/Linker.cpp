@@ -23,6 +23,22 @@ bool IsDeltaAnimOverride(int xanim)
     return Linker::IsDeltaAnim(xanim) == 0;
 }
 
+bool IsTranslationTagAnimOverride(int xanim) // TODO:? My Addition
+{
+    auto str = Linker::GetString(xanim);
+
+    if (Linker::Verbose) std::cout << "PhilLibX.T7MTEnhancements: Validating Translation Tag XAnim: " << str << "\n"; std::cout.flush();
+
+    // If it exists, that's enough for us rn
+    if (str && std::filesystem::exists((std::filesystem::path(Utility::GetEnvVar("TA_TOOLS_PATH")) / "share\\raw\\xanim_raw" / str).string() + ".xanim_raw"))
+        return false;
+    // If it exists, that's enough for us rn
+    if (str && std::filesystem::exists((std::filesystem::path(Utility::GetEnvVar("TA_TOOLS_PATH")) / "share\\raw\\xanim" / str).string() + ".direct_xanim"))
+        return false;
+
+    return Linker::IsTranslationTagAnim(xanim) == 0;
+}
+
 bool IsAdditiveAnimOverride(int xanim)
 {
     auto str = Linker::GetString(xanim);
@@ -102,11 +118,12 @@ void Linker::SetFunctionAddresses()
     SetFunctionAddress(GetString, 0x53610);
 
     // AI Validation
-    SetFunctionAddress(IsDeltaAnim,         0x8ED30);
-    SetFunctionAddress(IsAdditiveAnim,      0x8EB60);
-    SetFunctionAddress(ValidateAdditive,    0x8FE90);
-    SetFunctionAddress(IsLoopSyncAnim,      0x8EF40);
-    SetFunctionAddress(IsLoopingAnim,       0x8F110);
+    SetFunctionAddress(IsDeltaAnim,          0x8ED30);
+    SetFunctionAddress(IsTranslationTagAnim, 0x8E190); // TODO:? My Addition
+    SetFunctionAddress(IsAdditiveAnim,       0x8EB60);
+    SetFunctionAddress(ValidateAdditive,     0x8FE90);
+    SetFunctionAddress(IsLoopSyncAnim,       0x8EF40);
+    SetFunctionAddress(IsLoopingAnim,        0x8F110);
 
     // General
     SetFunctionAddress(G_Error, 0x318780);
@@ -405,12 +422,13 @@ uint64_t _fastcall Linker::ComputeCRC32Override(uint64_t a1, uint64_t a2, uint32
 
 void Linker::PatchMemory()
 {
-    //Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F340),    (PBYTE)&IsDeltaAnimOverride);
-    //Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F320),    (PBYTE)&IsAdditiveAnimOverride);
-    //Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F2E0),    (PBYTE)&IsLoopSyncAnimOverride);
-    //Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F300),    (PBYTE)&IsLoopingAnimOverride);
-    //Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x90E08),    (PBYTE)&ValidateAimAnimation);
-    //Utility::PatchMemory(BaseAddress + 0x90E08, (PBYTE)"\xE8", 1);
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F340),    (PBYTE)&IsDeltaAnimOverride);
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8E190),    (PBYTE)&IsTranslationTagAnimOverride); // TODO:? My Addition
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F320),    (PBYTE)&IsAdditiveAnimOverride);
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F2E0),    (PBYTE)&IsLoopSyncAnimOverride);
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8F300),    (PBYTE)&IsLoopingAnimOverride);
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x90E08),    (PBYTE)&ValidateAimAnimation);
+    Utility::PatchMemory(BaseAddress + 0x90E08, (PBYTE)"\xE8", 1);
 
     // Overrides 
     Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x7C6D60), (PBYTE)&ComputeCRC32Override);
@@ -435,8 +453,8 @@ void Linker::PatchMemory()
     if(Linker::DisableUnresolvedExternalCheck)
         Utility::PatchMemory(BaseAddress + 0x7D40F5, (PBYTE)"\x90\x90\x90\x90\x90\x90\x90\x90\x90", 0x9);
 
-    //// Asset Load Function Overrides
-    //Utility::PatchPointer(BaseAddress + 0xC862D8, (uint64_t)&LoadXAnimOverride);
+    // Asset Load Function Overrides
+    Utility::PatchPointer(BaseAddress + 0xC862D8, (uint64_t)&LoadXAnimOverride);
 }
 
 void Linker::Attach()
