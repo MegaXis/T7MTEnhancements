@@ -471,6 +471,47 @@ void Linker::Attach()
     PatchMemory();
 }
 
+// TODO:
+void* OnCreateMainWindow(void* pMainWindow)
+{
+    auto pResult = Radiant::OnCreate(pMainWindow);
+    return pResult;
+}
+
+// TODO:
+void LoadDatabaseDet(void* pMainWindow)
+{
+    Radiant::LoadDatabase(pMainWindow);
+    // MessageBoxW(nullptr, TEXT("Database Loaded"), TEXT("Window"), 0);
+    Radiant::LoadPlugins(pMainWindow);
+    MessageBoxW(nullptr, TEXT("Plugins Loaded"), TEXT("Window"), 0);
+
+    Radiant::pQMainWindow = pMainWindow;
+}
+
+void Radiant::SetFunctionAddresses()
+{
+    // Load functions
+    SetFunctionAddress(OnCreate, 0x64F100);
+    SetFunctionAddress(LoadDatabase, 0x9FADD0);
+    SetFunctionAddress(LoadPlugins, 0x9FF7D0);
+}
+
+void Radiant::PatchMemory()
+{
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8454A), (PBYTE)&OnCreateMainWindow);
+    Detours::X64::DetourFunction((PBYTE)(BaseAddress + 0x8373), (PBYTE)&LoadDatabaseDet);
+}
+
+void Radiant::Attach()
+{
+    BaseAddress = Utility::GetProcessBaseAddress(GetCurrentProcessId());
+
+    // Execute logic
+    SetFunctionAddresses();
+    PatchMemory();
+}
+
 enum SupportedTools : uint32_t
 {
     LINKER = 0x85064a44,
@@ -481,14 +522,28 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 {
     if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-        switch (Utility::ComputeFNVHash(Utility::GetExePath().filename().string()))
+        auto fnvHash = Utility::ComputeFNVHash(Utility::GetExePath().filename().string());
+        switch (fnvHash)
         {
-        case SupportedTools::LINKER:
-            std::cout << "PhilLibX.T7MTEnhancements: Initializing Version 2.0.0.0\n";
-            std::flush(std::cout);
-            Linker::LoadSubstitutes(Utility::GetExePath().parent_path() / "HashTables");
-            CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&Linker::Attach, 0, 0, 0);
-            break;
+            case SupportedTools::LINKER:
+            {
+                std::cout << "PhilLibX.T7MTEnhancements: Initializing Version 2.0.0.0 Linker\n";
+                std::flush(std::cout);
+                Linker::LoadSubstitutes(Utility::GetExePath().parent_path() / "HashTables");
+                CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&Linker::Attach, 0, 0, 0);
+                break;
+            }
+            case SupportedTools::APE:
+            {
+                std::cout << "PhilLibX.T7MTEnhancements: Initializing Version 2.0.0.0 Ape\n";
+                break;
+            }
+            default:
+            {
+                std::cout << "PhilLibX.T7MTEnhancements: Initializing Version 2.0.0.0 Radiant: " << std::to_string(fnvHash).c_str() << "\n";
+                CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&Radiant::Attach, 0, 0, 0);
+                break;
+            }
         }
     }
 

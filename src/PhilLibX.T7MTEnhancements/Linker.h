@@ -57,3 +57,24 @@ namespace Linker
     void Attach();
 };
 
+namespace Radiant
+{
+    // Radiant's Base Address
+    DWORD_PTR BaseAddress = 0;
+
+    void* pQMainWindow = nullptr;
+
+    void* (__cdecl* OnCreate)(void* pQMainWindow);
+
+    void (__cdecl* LoadDatabase)(void* pQMainWindow);
+
+    // Plugin Loading Function
+    void(__cdecl* LoadPlugins)(void* pQMainWindow);
+
+    // Sets function addresses from Radiant post-
+    void SetFunctionAddresses();
+    // Patches memory, detours function, etc.
+    void PatchMemory();
+    // Attaches to Radiant to perform the necessary edits
+    void Attach();
+};
