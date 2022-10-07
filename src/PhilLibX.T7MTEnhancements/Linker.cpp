@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Linker.h"
 #include "Utility.h"
-// #include "FileReader.h"
+#include "FileReader.h"
 #include "..\detours-master\detours\Detours.h"
 
 // Sets the function address + base address
@@ -114,7 +114,7 @@ void Linker::SetFunctionAddresses()
 
 XAnimAsset* LoadXAnimOverride(char* xanimName)
 {
-    /*
+    
     try
     {
         if (Linker::Verbose) std::cout << "PhilLibX.T7MTEnhancements: Loading XAnim Raw: " << xanimName << "\n"; std::cout.flush();
@@ -309,7 +309,7 @@ XAnimAsset* LoadXAnimOverride(char* xanimName)
     }
 
     return nullptr;
-    */
+    
     return (XAnimAsset*)Linker::Load_XAnim(xanimName);
 }
 
